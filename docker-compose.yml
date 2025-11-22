@@ -15,6 +15,11 @@ services:
         max-file: "3"
     networks:
       - default
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U odoo" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   odoo:
     image: odoo:19
@@ -45,6 +50,12 @@ services:
         max-file: "3"
     networks:
       - default
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8069/web/login" ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   nginx:
     image: nginx:alpine
@@ -65,6 +76,8 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
+    depends_on:
+      - nginx
     restart: always
     deploy:
       replicas: 3
