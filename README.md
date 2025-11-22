@@ -108,7 +108,7 @@ This is a typical Linux file monitor limit error.
 On the host Linux (**VM side**, not inside the container), add to `/etc/sysctl.conf`:
 
 ```bash
-sudo nano /etc/sysctl.conf
+sudo nano /etc/sysctl.d/99-odoo-inotify.conf
 ```
 
 ```
