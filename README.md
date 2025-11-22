@@ -1,157 +1,97 @@
-# Installing Odoo 19.0 with one command (Supports multiple Odoo instances on one server).
+# Installing Odoo 19 with Cloudflare Tunnel
+
+## Create a Cloudflare Tunnel and note the token
+
+At the first, You need to create a Cloudflare Tunnel And note the `token`.
+
+Here's the
+document: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/
+
+![cloudflare-0-1.png](screenshots/cloudflare-0-1.png)
+![cloudflare-0-2.png](screenshots/cloudflare-0-2.png)
+![cloudflare-0-3.png](screenshots/cloudflare-0-3.png)
 
 ## Quick Installation
 
-Install [docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/) yourself, then run the following to set up first Odoo instance @ `localhost:10019` (default master password: `minhng.info`):
+For Ubuntu 25.10 x64
+
+### Install Docker & Git
+
+And then, Install the Docker and Git to your server.
 
 ``` bash
-curl -s https://raw.githubusercontent.com/minhng92/odoo-19-docker-compose/master/run.sh | bash -s odoo-one 10019 20019
+# https://docs.docker.com/engine/install/debian/#install-using-the-repository
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt-get update
+
+# install docker
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# install git
+sudo apt-get install git
 ```
-and/or run the following to set up another Odoo instance @ `localhost:11019` (default master password: `minhng.info`):
 
-``` bash
-curl -s https://raw.githubusercontent.com/minhng92/odoo-19-docker-compose/master/run.sh | bash -s odoo-two 11019 21019
+### Clone code
+
+```bash
+cd /opt/
+git clone https://github.com/Iktahana/odoo-19-docker-compose.git
+mv ./odoo-19-docker-compose odoo
 ```
 
-Some arguments:
-* First argument (**odoo-one**): Odoo deploy folder
-* Second argument (**10019**): Odoo port
-* Third argument (**20019**): live chat port
+### Set configs (.env)
 
-If `curl` is not found, install it:
-
-``` bash
-$ sudo apt-get install curl
-# or
-$ sudo yum install curl
+```bash
+cd /opt/odoo
+cp .env.example .env
+nano .env
 ```
 
-<p>
-<img src="screenshots/odoo-19-docker-compose.gif" width="100%">
-</p>
+```dotenv
+# Using Cloudflare Turnnel is a safe and effective way
+CLOUDFLARED_TOKEN=<cloudflare_turnnel_token>
 
-## Usage
+# According to security practices, 
+# it is recommended that you mount the hard disk to an external SSD. 
+# (Most cloud services provide this service)
+PGDB_VOLUME=/mnt/volume_xxx_xx/odoo/postgresql/
 
-Start the container:
+# Tips: Use `openssl rand -hex 32` to generate a security password.
+POSTGRES_PASSWORD=
+```
+
+### Start the Docker Compose
+
 ``` sh
-docker-compose up
-```
-Then open `localhost:10019` to access Odoo 19.
-
-- **If you get any permission issues**, change the folder permission to make sure that the container is able to access the directory:
-
-``` sh
-$ sudo chmod -R 777 addons
-$ sudo chmod -R 777 etc
-$ sudo chmod -R 777 postgresql
-```
-
-- If you want to start the server with a different port, change **10019** to another value in **docker-compose.yml** inside the parent dir:
-
-```
-ports:
- - "10019:8069"
-```
-
-- To run Odoo container in detached mode (be able to close terminal without stopping Odoo):
-
-```
 docker-compose up -d
 ```
 
-- To Use a restart policy, i.e. configure the restart policy for a container, change the value related to **restart** key in **docker-compose.yml** file to one of the following:
-   - `no` =	Do not automatically restart the container. (the default)
-   - `on-failure[:max-retries]` =	Restart the container if it exits due to an error, which manifests as a non-zero exit code. Optionally, limit the number of times the Docker daemon attempts to restart the container using the :max-retries option.
-  - `always` =	Always restart the container if it stops. If it is manually stopped, it is restarted only when Docker daemon restarts or the container itself is manually restarted. (See the second bullet listed in restart policy details)
-  - `unless-stopped`	= Similar to always, except that when the container is stopped (manually or otherwise), it is not restarted even after Docker daemon restarts.
-```
- restart: always             # run as a service
-```
+## Setup tunnel
 
-- To increase maximum number of files watching from 8192 (default) to **524288**. In order to avoid error when we run multiple Odoo instances. This is an *optional step*. These commands are for Ubuntu user:
+Finally, set up the rules on the Cloudflare Dashboard.
 
-```
-$ if grep -qF "fs.inotify.max_user_watches" /etc/sysctl.conf; then echo $(grep -F "fs.inotify.max_user_watches" /etc/sysctl.conf); else echo "fs.inotify.max_user_watches = 524288" | sudo tee -a /etc/sysctl.conf; fi
-$ sudo sysctl -p    # apply new config immediately
-``` 
+![cloudflare-1.png](screenshots/cloudflare-1.png)
+![cloudflare-2.png](screenshots/cloudflare-2.png)
 
-## Custom addons
+來源URL是在容器內部，所以你必須填寫`http://nginx`.
 
-The **addons/** folder contains custom addons. Just put your custom addons if you have any.
+保存之後，你就可以使用你的域名在外網訪問odoo了。
 
-## Odoo configuration & log
+![odoo-19-welcome-screenshot.jpg](screenshots/odoo-19-welcome-screenshot.jpg)
 
-* To change Odoo configuration, edit file: **etc/odoo.conf**.
-* Log file: **etc/odoo-server.log**
-* Default database password (**admin_passwd**) is `minhng.info`, please change it @ [etc/odoo.conf#L75](/etc/odoo.conf#L75)
-
-## Odoo container management
-
-**Run Odoo**:
-
-``` bash
-docker-compose up -d
-```
-
-**Restart Odoo**:
-
-``` bash
-docker-compose restart
-```
-
-**Stop Odoo**:
-
-``` bash
-docker-compose down
-```
-
-## Live chat
-
-In [docker-compose.yml#L20](docker-compose.yml#L20), we exposed port **20019** for live-chat on host.
-
-Configuring **nginx** to activate live chat feature (in production):
-
-``` conf
-#...
-server {
-    #...
-    location /longpolling/ {
-        proxy_pass http://0.0.0.0:20019/longpolling/;
-    }
-    #...
-}
-#...
-```
-
-## docker-compose.yml
-
-* odoo:19
-* postgres:18
-
-## Odoo 19.0 screenshots after successful installation.
-
-<p align="center">
-<img src="screenshots/odoo-19-welcome-screenshot.jpg" width="50%">
-</p>
-
-<p>
-<img src="screenshots/odoo-19-apps-screenshot.jpg" width="100%">
-</p>
-
-<p>
-<img src="screenshots/odoo-19-dashboard.jpg" width="100%">
-</p>
-
-<p>
-<img src="screenshots/odoo-19-sales-screen.jpg" width="100%">
-</p>
-
-<p>
-<img src="screenshots/odoo-19-product-form.jpg" width="100%">
-</p>
-
-## ☕ Buy Me a Coffee
-
-If you find this project helpful, consider buying me a coffee to support my work!
-
-<a href="https://buymeacoffee.com/minhng.info" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+enjoy it.
