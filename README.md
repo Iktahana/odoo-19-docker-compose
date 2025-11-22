@@ -1,6 +1,6 @@
 # Installing Odoo 19 with Cloudflare Tunnel
 
-## Create a Cloudflare Tunnel and note the token
+## Create a Cloudflare Tunnel
 
 At the first, You need to create a Cloudflare Tunnel And note the `token`.
 
