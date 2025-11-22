@@ -89,10 +89,31 @@ Finally, set up the rules on the Cloudflare Dashboard.
 ![cloudflare-1.png](screenshots/cloudflare-1.png)
 ![cloudflare-2.png](screenshots/cloudflare-2.png)
 
-來源URL是在容器內部，所以你必須填寫`http://nginx`.
+The source URL is inside the container, so you must fill in `http://nginx`.
 
-保存之後，你就可以使用你的域名在外網訪問odoo了。
+After saving, you can use your domain name to access odoo from the outside.
 
 ![odoo-19-welcome-screenshot.jpg](screenshots/odoo-19-welcome-screenshot.jpg)
 
 enjoy it.
+
+## Errors
+
+```shell
+OSError: [Errno 28] inotify watch limit reached
+```
+
+This is a typical Linux file monitor limit error.
+
+On the host Linux (**VM side**, not inside the container), add to `/etc/sysctl.conf`:
+
+```bash
+sudo nano /etc/sysctl.conf
+```
+
+```conf
+fs.inotify.max_user_watches=524288
+fs.inotify.max_user_instances=512
+```
+
+done.
