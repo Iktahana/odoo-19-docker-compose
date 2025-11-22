@@ -4,7 +4,7 @@ services:
     environment:
       - POSTGRES_USER=odoo
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=odoo
+      - POSTGRES_DB=postgres
     restart: always             # run as a service
     volumes:
         - ${PGDB_VOLUME}:/var/lib/postgresql/18/docker      # Important Change: the PGDATA environment variable of the image was changed to be version specific in PostgreSQL 18 and above⁠
@@ -15,6 +15,12 @@ services:
         max-file: "3"
     networks:
       - default
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "odoo", "-d", "postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   odoo:
     image: odoo:19
@@ -32,9 +38,6 @@ services:
       - PASSWORD=${POSTGRES_PASSWORD}
       - PIP_BREAK_SYSTEM_PACKAGES=1
     volumes:
-      #- /etc/timezone:/etc/timezone:ro
-      #- /etc/localtime:/etc/localtime:ro
-#      - ./entrypoint.sh:/entrypoint.sh
       - ./addons:/mnt/extra-addons
       - ./etc:/etc/odoo
     restart: always             # run as a service
