@@ -111,9 +111,15 @@ On the host Linux (**VM side**, not inside the container), add to `/etc/sysctl.c
 sudo nano /etc/sysctl.conf
 ```
 
-```conf
+```
 fs.inotify.max_user_watches=524288
 fs.inotify.max_user_instances=512
 ```
 
-done.
+Save it.
+
+```bash
+sudo sysctl -p
+```
+
+Done.
